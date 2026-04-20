@@ -111,7 +111,7 @@ const App = () => {
           </div>
 
           <form onSubmit={send} className="p-3 border-t border-border flex gap-2">
-            <Button type="button" size="icon" variant="ghost" className="shrink-0">
+            <Button type="button" size="icon" variant="ghost" className="shrink-0" onClick={handleVoice} aria-label="Голосовое сообщение">
               <Mic className="h-4 w-4" />
             </Button>
             <Input
