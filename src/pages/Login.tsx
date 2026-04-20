@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Mail, Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
+import { track } from "@/lib/analytics";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -19,6 +20,7 @@ const Login = () => {
       toast.error("Введите корректный email");
       return;
     }
+    track("signup_started", { method: "magic_link", email_domain: email.split("@")[1] ?? null });
     setSent(true);
     toast.success("Магическая ссылка отправлена ✨");
   };
@@ -90,7 +92,7 @@ const Login = () => {
                 variant="outline"
                 size="lg"
                 className="w-full"
-                onClick={() => { toast.success("Демо-вход"); navigate("/app"); }}
+                onClick={() => { track("signup_started", { method: "demo_skip" }); toast.success("Демо-вход"); navigate("/app"); }}
               >
                 Пропустить и зайти в демо
               </Button>

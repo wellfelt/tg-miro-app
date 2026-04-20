@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useState, useRef, useEffect } from "react";
 import { Send, Mic, Sparkles, MessageSquare, Square, ArrowRight, Maximize2 } from "lucide-react";
+import { track } from "@/lib/analytics";
 
 type Msg = { id: number; from: "user" | "bot"; text: string; type: "text" | "voice"; action?: string; time: string };
 
@@ -29,11 +30,17 @@ const stickers = [
 const App = () => {
   const [msgs, setMsgs] = useState<Msg[]>(seed);
   const [input, setInput] = useState("");
+  const [hasSentFirst, setHasSentFirst] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [msgs]);
+
+  // Demo: entering /app simulates a connected Miro board.
+  useEffect(() => {
+    track("board_connected", { board_id: "demo-q1-roadmap", source: "demo" });
+  }, []);
 
   const send = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,11 +48,23 @@ const App = () => {
     const now = new Date().toTimeString().slice(0, 5);
     const userMsg: Msg = { id: Date.now(), from: "user", text: input, type: "text", time: now };
     setMsgs(m => [...m, userMsg]);
+    if (!hasSentFirst) {
+      track("first_message", { type: "text", length: input.length });
+      setHasSentFirst(true);
+    }
     setInput("");
     setTimeout(() => {
       const bot: Msg = { id: Date.now()+1, from: "bot", text: "Принял. Применяю на доску ✨", type: "text", time: now };
       setMsgs(m => [...m, bot].slice(-10));
     }, 600);
+  };
+
+  const handleVoice = () => {
+    track("voice_message", { duration_sec: null, source: "mic_button" });
+    if (!hasSentFirst) {
+      track("first_message", { type: "voice" });
+      setHasSentFirst(true);
+    }
   };
 
   return (
@@ -92,7 +111,7 @@ const App = () => {
           </div>
 
           <form onSubmit={send} className="p-3 border-t border-border flex gap-2">
-            <Button type="button" size="icon" variant="ghost" className="shrink-0">
+            <Button type="button" size="icon" variant="ghost" className="shrink-0" onClick={handleVoice} aria-label="Голосовое сообщение">
               <Mic className="h-4 w-4" />
             </Button>
             <Input
