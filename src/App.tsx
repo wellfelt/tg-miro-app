@@ -9,8 +9,14 @@ import AppPage from "./pages/App.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Funnel from "./pages/Funnel.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import { usePageView } from "./hooks/usePageView";
 
 const queryClient = new QueryClient();
+
+const RouteAnalytics = () => {
+  usePageView();
+  return null;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -18,6 +24,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <RouteAnalytics />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
