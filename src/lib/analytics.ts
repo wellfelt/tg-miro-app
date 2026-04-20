@@ -23,17 +23,9 @@ export type AnalyticsEvent =
   | "voice_message";
 
 export const track = (event: AnalyticsEvent, properties?: Record<string, unknown>) => {
-  const key = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
-  if (!key) {
-    // eslint-disable-next-line no-console
-    console.log(`[analytics] ${event}`, properties ?? {});
-    return;
-  }
   posthog.capture(event, properties);
 };
 
 export const identify = (distinctId: string, properties?: Record<string, unknown>) => {
-  const key = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
-  if (!key) return;
   posthog.identify(distinctId, properties);
 };
