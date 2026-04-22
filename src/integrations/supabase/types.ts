@@ -14,7 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      events: {
+        Row: {
+          created_at: string
+          event: string
+          id: string
+          metadata: Json | null
+          telegram_id: string
+        }
+        Insert: {
+          created_at?: string
+          event: string
+          id?: string
+          metadata?: Json | null
+          telegram_id: string
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          id?: string
+          metadata?: Json | null
+          telegram_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          action: string | null
+          content: string | null
+          created_at: string
+          id: string
+          telegram_id: string
+          type: string
+        }
+        Insert: {
+          action?: string | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          telegram_id: string
+          type: string
+        }
+        Update: {
+          action?: string | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          telegram_id?: string
+          type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
