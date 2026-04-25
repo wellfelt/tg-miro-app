@@ -86,6 +86,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<MessageRow[]>([]);
   const [recent, setRecent] = useState<MessageRow[]>([]);
+  const [signups, setSignups] = useState<SignupRow[]>([]);
+  const [totalUsers, setTotalUsers] = useState<number>(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -94,7 +96,11 @@ const Dashboard = () => {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-      const [weekRes, recentRes] = await Promise.all([
+      const sb = supabase as unknown as {
+        rpc: (fn: string) => Promise<{ data: unknown; error: unknown }>;
+      };
+
+      const [weekRes, recentRes, signupsRes, totalUsersRes] = await Promise.all([
         supabase
           .from("messages")
           .select("*")
@@ -104,11 +110,19 @@ const Dashboard = () => {
           .select("*")
           .order("created_at", { ascending: false })
           .limit(10),
+        sb.rpc("get_signups_per_day"),
+        sb.rpc("get_total_users"),
       ]);
 
       if (cancelled) return;
       if (weekRes.data) setMessages(weekRes.data as MessageRow[]);
       if (recentRes.data) setRecent(recentRes.data as MessageRow[]);
+      if (Array.isArray(signupsRes.data)) {
+        setSignups(formatSignups(signupsRes.data as { day: string; count: number }[]));
+      }
+      if (typeof totalUsersRes.data === "number") {
+        setTotalUsers(totalUsersRes.data);
+      }
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -117,16 +131,14 @@ const Dashboard = () => {
   const totalMessages = messages.length;
   const voiceCount = messages.filter(m => m.type === "voice").length;
   const textCount = totalMessages - voiceCount;
-  const uniqueUsers = new Set(messages.map(m => m.telegram_id)).size;
-  const perDay = buildLast7Days(messages);
   const actionDist = buildActionDistribution(messages);
   const isEmpty = !loading && totalMessages === 0;
 
   const stats = [
-    { icon: MessageSquare, label: "Всего сообщений", value: totalMessages.toLocaleString("ru"), color: "text-tg" },
-    { icon: Users,         label: "Уникальных пользователей", value: uniqueUsers.toLocaleString("ru"), color: "text-primary" },
-    { icon: Mic,           label: "Голосовых",        value: voiceCount.toLocaleString("ru"), color: "text-accent" },
-    { icon: Type,          label: "Текстовых",        value: textCount.toLocaleString("ru"), color: "text-success" },
+    { icon: UserPlus,      label: "Всего пользователей",       value: totalUsers.toLocaleString("ru"),    color: "text-primary" },
+    { icon: MessageSquare, label: "Всего сообщений",           value: totalMessages.toLocaleString("ru"), color: "text-tg" },
+    { icon: Mic,           label: "Голосовых",                 value: voiceCount.toLocaleString("ru"),    color: "text-accent" },
+    { icon: Type,          label: "Текстовых",                 value: textCount.toLocaleString("ru"),     color: "text-success" },
   ];
 
   return (
