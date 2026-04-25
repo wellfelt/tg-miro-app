@@ -105,12 +105,20 @@ export const Navbar = ({ variant = "light" }: { variant?: "light" | "dark" }) =>
               </Link>
             ))}
             <div className="flex gap-2 pt-2">
-              <Button asChild variant="ghost" className="flex-1">
-                <Link to="/login" onClick={() => setOpen(false)}>Войти</Link>
-              </Button>
-              <Button asChild variant="brand" className="flex-1">
-                <Link to="/login" onClick={() => setOpen(false)}>Начать</Link>
-              </Button>
+              {user ? (
+                <Button variant="outline" className="flex-1" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4" /> Выйти
+                </Button>
+              ) : (
+                <>
+                  <Button asChild variant="ghost" className="flex-1">
+                    <Link to="/login" onClick={() => setOpen(false)}>Войти</Link>
+                  </Button>
+                  <Button asChild variant="brand" className="flex-1">
+                    <Link to="/login" onClick={() => setOpen(false)}>Начать</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
