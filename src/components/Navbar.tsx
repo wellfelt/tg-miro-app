@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
-const links = [
-  { to: "/app", label: "Чат" },
-  { to: "/dashboard", label: "Метрики" },
+const authedLinks = [
+  { to: "/dashboard", label: "Дашборд" },
+  { to: "/chat", label: "Чат" },
   { to: "/funnel", label: "Воронка" },
 ];
 
@@ -41,7 +41,7 @@ export const Navbar = ({ variant = "light" }: { variant?: "light" | "dark" }) =>
         </Link>
 
         <div className="hidden md:flex items-center gap-1">
-          {links.map((l) => (
+          {user && authedLinks.map((l) => (
             <Link
               key={l.to}
               to={l.to}
@@ -91,7 +91,7 @@ export const Navbar = ({ variant = "light" }: { variant?: "light" | "dark" }) =>
       {open && (
         <div className="md:hidden border-t border-border bg-background">
           <div className="container py-4 flex flex-col gap-1">
-            {links.map((l) => (
+            {user && authedLinks.map((l) => (
               <Link
                 key={l.to}
                 to={l.to}
