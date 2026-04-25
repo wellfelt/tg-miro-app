@@ -8,6 +8,7 @@ import Login from "./pages/Login.tsx";
 import AppPage from "./pages/App.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Funnel from "./pages/Funnel.tsx";
+import Chat from "./pages/Chat.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { usePageView } from "./hooks/usePageView";
 import { AuthProvider } from "./hooks/useAuth";
@@ -31,16 +32,10 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/app" element={<AppPage />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/funnel" element={<Funnel />} />
+            <Route path="/app" element={<ProtectedRoute><AppPage /></ProtectedRoute>} />
+            <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/funnel" element={<ProtectedRoute><Funnel /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
