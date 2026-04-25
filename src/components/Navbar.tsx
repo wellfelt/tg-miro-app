@@ -1,9 +1,11 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Logo } from "./Logo";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const links = [
   { to: "/app", label: "Чат" },
@@ -13,7 +15,16 @@ const links = [
 
 export const Navbar = ({ variant = "light" }: { variant?: "light" | "dark" }) => {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const [open, setOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await signOut();
+    toast.success("Вы вышли");
+    navigate("/", { replace: true });
+    setOpen(false);
+  };
 
   return (
     <header
@@ -47,12 +58,25 @@ export const Navbar = ({ variant = "light" }: { variant?: "light" | "dark" }) =>
         </div>
 
         <div className="hidden md:flex items-center gap-2">
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/login">Войти</Link>
-          </Button>
-          <Button asChild variant="brand" size="sm">
-            <Link to="/login">Начать</Link>
-          </Button>
+          {user ? (
+            <>
+              <span className="text-xs text-muted-foreground font-mono max-w-[180px] truncate">
+                {user.email}
+              </span>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
+                <LogOut className="h-4 w-4" /> Выйти
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/login">Войти</Link>
+              </Button>
+              <Button asChild variant="brand" size="sm">
+                <Link to="/login">Начать</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         <button
@@ -81,12 +105,20 @@ export const Navbar = ({ variant = "light" }: { variant?: "light" | "dark" }) =>
               </Link>
             ))}
             <div className="flex gap-2 pt-2">
-              <Button asChild variant="ghost" className="flex-1">
-                <Link to="/login" onClick={() => setOpen(false)}>Войти</Link>
-              </Button>
-              <Button asChild variant="brand" className="flex-1">
-                <Link to="/login" onClick={() => setOpen(false)}>Начать</Link>
-              </Button>
+              {user ? (
+                <Button variant="outline" className="flex-1" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4" /> Выйти
+                </Button>
+              ) : (
+                <>
+                  <Button asChild variant="ghost" className="flex-1">
+                    <Link to="/login" onClick={() => setOpen(false)}>Войти</Link>
+                  </Button>
+                  <Button asChild variant="brand" className="flex-1">
+                    <Link to="/login" onClick={() => setOpen(false)}>Начать</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
