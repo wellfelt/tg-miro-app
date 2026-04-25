@@ -70,7 +70,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_signups_per_day: {
+        Args: never
+        Returns: {
+          count: number
+          day: string
+        }[]
+      }
+      get_total_users: { Args: never; Returns: number }
     }
     Enums: {
       [_ in never]: never
