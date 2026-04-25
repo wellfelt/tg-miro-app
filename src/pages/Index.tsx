@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import heroImg from "@/assets/hero.jpg";
 
-const TELEGRAM_BOT_URL = "https://t.me/your_bot";
+const TELEGRAM_BOT_URL = "https://t.me/miro_wfl_bot";
 
 const features = [
   {
