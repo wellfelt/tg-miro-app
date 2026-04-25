@@ -217,97 +217,100 @@ const Dashboard = () => {
             </div>
           </Card>
 
-              {/* Pie: Action types */}
-              <Card className="p-6 rounded-2xl border-border bg-card">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="font-display text-lg font-semibold">Типы действий</h3>
-                    <p className="text-xs text-muted-foreground">Распределение по категориям</p>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full bg-accent/15 text-accent text-[10px] font-mono">pie</span>
-                </div>
-                <div className="h-72">
-                  {loading ? (
-                    <Skeleton className="h-full w-full rounded-xl" />
-                  ) : actionDist.length === 0 ? (
-                    <div className="h-full grid place-items-center text-sm text-muted-foreground">
-                      Нет действий за период
-                    </div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={actionDist}
-                          cx="50%" cy="50%"
-                          innerRadius={55}
-                          outerRadius={95}
-                          paddingAngle={4}
-                          dataKey="value"
-                          stroke="hsl(var(--card))"
-                          strokeWidth={3}
-                        >
-                          {actionDist.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                        </Pie>
-                        <Tooltip contentStyle={tooltipStyle} />
-                        <Legend
-                          iconType="circle"
-                          wrapperStyle={{ fontSize: 12, color: "hsl(var(--muted-foreground))" }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
-              </Card>
-            </div>
-
-            {/* Recent activity */}
-            <Card className="p-6 rounded-2xl border-border bg-card">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="font-display text-lg font-semibold">Последние сообщения</h3>
-                  <p className="text-xs text-muted-foreground">10 свежих записей</p>
-                </div>
-                <span className="px-2.5 py-1 rounded-full bg-primary/15 text-primary text-[10px] font-mono">live</span>
+          {/* Pie: Action types */}
+          <Card className="p-6 rounded-2xl border-border bg-card">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="font-display text-lg font-semibold">Типы действий</h3>
+                <p className="text-xs text-muted-foreground">Распределение по категориям</p>
               </div>
-
+              <span className="px-2.5 py-1 rounded-full bg-accent/15 text-accent text-[10px] font-mono">pie</span>
+            </div>
+            <div className="h-72">
               {loading ? (
-                <div className="space-y-3">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-14 w-full rounded-xl" />
-                  ))}
-                </div>
-              ) : recent.length === 0 ? (
-                <div className="py-10 text-center text-sm text-muted-foreground">
-                  Нет сообщений
+                <Skeleton className="h-full w-full rounded-xl" />
+              ) : actionDist.length === 0 ? (
+                <div className="h-full grid place-items-center text-sm text-muted-foreground text-center px-4">
+                  Данные появятся после первых действий
                 </div>
               ) : (
-                <ul className="divide-y divide-border">
-                  {recent.map(m => (
-                    <li key={m.id} className="py-3 flex items-center gap-4">
-                      <div className={`h-9 w-9 rounded-xl bg-secondary grid place-items-center shrink-0 ${m.type === "voice" ? "text-accent" : "text-tg"}`}>
-                        {m.type === "voice" ? <Mic className="h-4 w-4" /> : <Type className="h-4 w-4" />}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm truncate">
-                          {m.content || <span className="text-muted-foreground italic">без текста</span>}
-                        </p>
-                        <p className="text-xs text-muted-foreground font-mono">
-                          @{m.telegram_id} · {timeAgo(m.created_at)}
-                        </p>
-                      </div>
-                      {m.action && (
-                        <span className="px-2.5 py-1 rounded-full bg-secondary text-[10px] font-mono text-muted-foreground shrink-0 inline-flex items-center gap-1">
-                          <Activity className="h-3 w-3" />
-                          {m.action}
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={actionDist}
+                      cx="50%" cy="50%"
+                      innerRadius={55}
+                      outerRadius={95}
+                      paddingAngle={4}
+                      dataKey="value"
+                      stroke="hsl(var(--card))"
+                      strokeWidth={3}
+                    >
+                      {actionDist.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Legend
+                      iconType="circle"
+                      wrapperStyle={{ fontSize: 12, color: "hsl(var(--muted-foreground))" }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
               )}
-            </Card>
-          </>
-        )}
+            </div>
+          </Card>
+        </div>
+
+        {/* Recent activity */}
+        <Card className="p-6 rounded-2xl border-border bg-card">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="font-display text-lg font-semibold">Последние сообщения</h3>
+              <p className="text-xs text-muted-foreground">10 свежих записей</p>
+            </div>
+            <span className="px-2.5 py-1 rounded-full bg-primary/15 text-primary text-[10px] font-mono">live</span>
+          </div>
+
+          {loading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-14 w-full rounded-xl" />
+              ))}
+            </div>
+          ) : isEmpty ? (
+            <div className="py-12 text-center">
+              <div className="mx-auto h-12 w-12 rounded-2xl bg-secondary grid place-items-center text-muted-foreground mb-3">
+                <Inbox className="h-6 w-6" />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Данные появятся после первых действий
+              </p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-border">
+              {recent.map(m => (
+                <li key={m.id} className="py-3 flex items-center gap-4">
+                  <div className={`h-9 w-9 rounded-xl bg-secondary grid place-items-center shrink-0 ${m.type === "voice" ? "text-accent" : "text-tg"}`}>
+                    {m.type === "voice" ? <Mic className="h-4 w-4" /> : <Type className="h-4 w-4" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm truncate">
+                      {m.content || <span className="text-muted-foreground italic">без текста</span>}
+                    </p>
+                    <p className="text-xs text-muted-foreground font-mono">
+                      @{m.telegram_id} · {timeAgo(m.created_at)}
+                    </p>
+                  </div>
+                  {m.action && (
+                    <span className="px-2.5 py-1 rounded-full bg-secondary text-[10px] font-mono text-muted-foreground shrink-0 inline-flex items-center gap-1">
+                      <Activity className="h-3 w-3" />
+                      {m.action}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
       </div>
     </div>
   );
