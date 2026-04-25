@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import heroImg from "@/assets/hero.jpg";
 
-const TELEGRAM_BOT_URL = "https://t.me/your_bot";
+const TELEGRAM_BOT_URL = "https://t.me/miro_wfl_bot";
 
 const features = [
   {
@@ -59,7 +59,7 @@ const steps = [
   {
     n: "01",
     title: "Подключи бота",
-    desc: "Открой @your_bot в Telegram и пришли ссылку на свою Miro-доску. 30 секунд на старт.",
+    desc: "Открой @miro_wfl_bot в Telegram и пришли ссылку на свою Miro-доску. 30 секунд на старт.",
     icon: Send,
   },
   {
@@ -106,21 +106,6 @@ const Index = () => {
                   Попробовать бесплатно <ArrowRight className="h-4 w-4" />
                 </a>
               </Button>
-              <Button asChild size="xl" variant="outline">
-                <Link to="/app">Посмотреть демо</Link>
-              </Button>
-            </div>
-            <div className="mt-10 flex items-center gap-6 text-sm text-muted-foreground">
-              <div className="flex -space-x-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className="h-8 w-8 rounded-full bg-brand border-2 border-background"
-                    style={{ opacity: 0.4 + i * 0.15 }}
-                  />
-                ))}
-              </div>
-              <span>+1 240 команд используют ежедневно</span>
             </div>
           </div>
 
@@ -282,9 +267,8 @@ const Index = () => {
         <div className="container flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
           <p>© 2026 Miro AI Bot · Сделано с любовью к доскам</p>
           <div className="flex gap-6">
-            <Link to="/dashboard" className="hover:text-foreground">Метрики</Link>
-            <Link to="/funnel" className="hover:text-foreground">Воронка</Link>
-            <Link to="/app" className="hover:text-foreground">Чат</Link>
+            <Link to="/login" className="hover:text-foreground">Войти</Link>
+            <Link to="/dashboard" className="hover:text-foreground">Дашборд</Link>
           </div>
         </div>
       </footer>

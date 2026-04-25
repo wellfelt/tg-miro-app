@@ -8,7 +8,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   PieChart, Pie, Cell, Legend,
 } from "recharts";
-import { MessageSquare, Mic, Users, Inbox, Type, Activity } from "lucide-react";
+import { MessageSquare, Mic, Inbox, Type, Activity, UserPlus } from "lucide-react";
 
 type MessageRow = {
   id: string;
@@ -36,27 +36,16 @@ const tooltipStyle = {
 
 const WEEKDAYS = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
 
-function buildLast7Days(messages: MessageRow[]) {
-  const buckets: { day: string; count: number; date: string }[] = [];
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+type SignupRow = { day: string; count: number };
 
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    buckets.push({
+function formatSignups(rows: { day: string; count: number | string }[]): SignupRow[] {
+  return rows.map(r => {
+    const d = new Date(r.day);
+    return {
       day: WEEKDAYS[d.getDay()],
-      count: 0,
-      date: d.toISOString().slice(0, 10),
-    });
-  }
-
-  for (const m of messages) {
-    const key = new Date(m.created_at).toISOString().slice(0, 10);
-    const bucket = buckets.find(b => b.date === key);
-    if (bucket) bucket.count++;
-  }
-  return buckets;
+      count: Number(r.count) || 0,
+    };
+  });
 }
 
 function categorizeAction(action: string | null): "sticky" | "shape" | "read" | "other" {
@@ -97,6 +86,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<MessageRow[]>([]);
   const [recent, setRecent] = useState<MessageRow[]>([]);
+  const [signups, setSignups] = useState<SignupRow[]>([]);
+  const [totalUsers, setTotalUsers] = useState<number>(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -105,7 +96,11 @@ const Dashboard = () => {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-      const [weekRes, recentRes] = await Promise.all([
+      const sb = supabase as unknown as {
+        rpc: (fn: string) => Promise<{ data: unknown; error: unknown }>;
+      };
+
+      const [weekRes, recentRes, signupsRes, totalUsersRes] = await Promise.all([
         supabase
           .from("messages")
           .select("*")
@@ -115,11 +110,19 @@ const Dashboard = () => {
           .select("*")
           .order("created_at", { ascending: false })
           .limit(10),
+        sb.rpc("get_signups_per_day"),
+        sb.rpc("get_total_users"),
       ]);
 
       if (cancelled) return;
       if (weekRes.data) setMessages(weekRes.data as MessageRow[]);
       if (recentRes.data) setRecent(recentRes.data as MessageRow[]);
+      if (Array.isArray(signupsRes.data)) {
+        setSignups(formatSignups(signupsRes.data as { day: string; count: number }[]));
+      }
+      if (typeof totalUsersRes.data === "number") {
+        setTotalUsers(totalUsersRes.data);
+      }
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -128,16 +131,14 @@ const Dashboard = () => {
   const totalMessages = messages.length;
   const voiceCount = messages.filter(m => m.type === "voice").length;
   const textCount = totalMessages - voiceCount;
-  const uniqueUsers = new Set(messages.map(m => m.telegram_id)).size;
-  const perDay = buildLast7Days(messages);
   const actionDist = buildActionDistribution(messages);
   const isEmpty = !loading && totalMessages === 0;
 
   const stats = [
-    { icon: MessageSquare, label: "Всего сообщений", value: totalMessages.toLocaleString("ru"), color: "text-tg" },
-    { icon: Users,         label: "Уникальных пользователей", value: uniqueUsers.toLocaleString("ru"), color: "text-primary" },
-    { icon: Mic,           label: "Голосовых",        value: voiceCount.toLocaleString("ru"), color: "text-accent" },
-    { icon: Type,          label: "Текстовых",        value: textCount.toLocaleString("ru"), color: "text-success" },
+    { icon: UserPlus,      label: "Всего пользователей",       value: totalUsers.toLocaleString("ru"),    color: "text-primary" },
+    { icon: MessageSquare, label: "Всего сообщений",           value: totalMessages.toLocaleString("ru"), color: "text-tg" },
+    { icon: Mic,           label: "Голосовых",                 value: voiceCount.toLocaleString("ru"),    color: "text-accent" },
+    { icon: Type,          label: "Текстовых",                 value: textCount.toLocaleString("ru"),     color: "text-success" },
   ];
 
   return (
@@ -175,150 +176,141 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {isEmpty ? (
-          <Card className="p-12 rounded-2xl border-border bg-card text-center">
-            <div className="mx-auto h-14 w-14 rounded-2xl bg-secondary grid place-items-center text-muted-foreground mb-4">
-              <Inbox className="h-7 w-7" />
-            </div>
-            <h3 className="font-display text-xl font-semibold mb-1">No messages yet</h3>
-            <p className="text-sm text-muted-foreground">
-              Когда бот начнёт получать сообщения, метрики и графики появятся здесь.
-            </p>
-          </Card>
-        ) : (
-          <>
-            {/* Charts grid */}
-            <div className="grid lg:grid-cols-3 gap-5 mb-5">
-              {/* Line: Messages per day */}
-              <Card className="lg:col-span-2 p-6 rounded-2xl border-border bg-card">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="font-display text-lg font-semibold">Сообщения по дням</h3>
-                    <p className="text-xs text-muted-foreground">Активность чата за неделю</p>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full bg-tg/15 text-tg text-[10px] font-mono">line</span>
-                </div>
-                <div className="h-72">
-                  {loading ? (
-                    <Skeleton className="h-full w-full rounded-xl" />
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={perDay} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-                        <defs>
-                          <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="hsl(var(--primary))" />
-                            <stop offset="100%" stopColor="hsl(var(--accent))" />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                        <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                        <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: "hsl(var(--primary))", strokeWidth: 1, strokeDasharray: "3 3" }} />
-                        <Line
-                          type="monotone"
-                          dataKey="count"
-                          stroke="url(#lineGrad)"
-                          strokeWidth={3}
-                          dot={{ fill: "hsl(var(--primary))", r: 4, strokeWidth: 0 }}
-                          activeDot={{ r: 6, fill: "hsl(var(--accent))" }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
-              </Card>
-
-              {/* Pie: Action types */}
-              <Card className="p-6 rounded-2xl border-border bg-card">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="font-display text-lg font-semibold">Типы действий</h3>
-                    <p className="text-xs text-muted-foreground">Распределение по категориям</p>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full bg-accent/15 text-accent text-[10px] font-mono">pie</span>
-                </div>
-                <div className="h-72">
-                  {loading ? (
-                    <Skeleton className="h-full w-full rounded-xl" />
-                  ) : actionDist.length === 0 ? (
-                    <div className="h-full grid place-items-center text-sm text-muted-foreground">
-                      Нет действий за период
-                    </div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={actionDist}
-                          cx="50%" cy="50%"
-                          innerRadius={55}
-                          outerRadius={95}
-                          paddingAngle={4}
-                          dataKey="value"
-                          stroke="hsl(var(--card))"
-                          strokeWidth={3}
-                        >
-                          {actionDist.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                        </Pie>
-                        <Tooltip contentStyle={tooltipStyle} />
-                        <Legend
-                          iconType="circle"
-                          wrapperStyle={{ fontSize: 12, color: "hsl(var(--muted-foreground))" }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
-              </Card>
-            </div>
-
-            {/* Recent activity */}
-            <Card className="p-6 rounded-2xl border-border bg-card">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="font-display text-lg font-semibold">Последние сообщения</h3>
-                  <p className="text-xs text-muted-foreground">10 свежих записей</p>
-                </div>
-                <span className="px-2.5 py-1 rounded-full bg-primary/15 text-primary text-[10px] font-mono">live</span>
+        {/* Charts grid */}
+        <div className="grid lg:grid-cols-3 gap-5 mb-5">
+          {/* Line: Signups per day */}
+          <Card className="lg:col-span-2 p-6 rounded-2xl border-border bg-card">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="font-display text-lg font-semibold">Регистрации по дням</h3>
+                <p className="text-xs text-muted-foreground">Новые пользователи за неделю</p>
               </div>
-
+              <span className="px-2.5 py-1 rounded-full bg-tg/15 text-tg text-[10px] font-mono">line</span>
+            </div>
+            <div className="h-72">
               {loading ? (
-                <div className="space-y-3">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-14 w-full rounded-xl" />
-                  ))}
-                </div>
-              ) : recent.length === 0 ? (
-                <div className="py-10 text-center text-sm text-muted-foreground">
-                  Нет сообщений
+                <Skeleton className="h-full w-full rounded-xl" />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={signups} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="hsl(var(--primary))" />
+                        <stop offset="100%" stopColor="hsl(var(--accent))" />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: "hsl(var(--primary))", strokeWidth: 1, strokeDasharray: "3 3" }} />
+                    <Line
+                      type="monotone"
+                      dataKey="count"
+                      stroke="url(#lineGrad)"
+                      strokeWidth={3}
+                      dot={{ fill: "hsl(var(--primary))", r: 4, strokeWidth: 0 }}
+                      activeDot={{ r: 6, fill: "hsl(var(--accent))" }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </Card>
+
+          {/* Pie: Action types */}
+          <Card className="p-6 rounded-2xl border-border bg-card">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="font-display text-lg font-semibold">Типы действий</h3>
+                <p className="text-xs text-muted-foreground">Распределение по категориям</p>
+              </div>
+              <span className="px-2.5 py-1 rounded-full bg-accent/15 text-accent text-[10px] font-mono">pie</span>
+            </div>
+            <div className="h-72">
+              {loading ? (
+                <Skeleton className="h-full w-full rounded-xl" />
+              ) : actionDist.length === 0 ? (
+                <div className="h-full grid place-items-center text-sm text-muted-foreground text-center px-4">
+                  Данные появятся после первых действий
                 </div>
               ) : (
-                <ul className="divide-y divide-border">
-                  {recent.map(m => (
-                    <li key={m.id} className="py-3 flex items-center gap-4">
-                      <div className={`h-9 w-9 rounded-xl bg-secondary grid place-items-center shrink-0 ${m.type === "voice" ? "text-accent" : "text-tg"}`}>
-                        {m.type === "voice" ? <Mic className="h-4 w-4" /> : <Type className="h-4 w-4" />}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm truncate">
-                          {m.content || <span className="text-muted-foreground italic">без текста</span>}
-                        </p>
-                        <p className="text-xs text-muted-foreground font-mono">
-                          @{m.telegram_id} · {timeAgo(m.created_at)}
-                        </p>
-                      </div>
-                      {m.action && (
-                        <span className="px-2.5 py-1 rounded-full bg-secondary text-[10px] font-mono text-muted-foreground shrink-0 inline-flex items-center gap-1">
-                          <Activity className="h-3 w-3" />
-                          {m.action}
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={actionDist}
+                      cx="50%" cy="50%"
+                      innerRadius={55}
+                      outerRadius={95}
+                      paddingAngle={4}
+                      dataKey="value"
+                      stroke="hsl(var(--card))"
+                      strokeWidth={3}
+                    >
+                      {actionDist.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Legend
+                      iconType="circle"
+                      wrapperStyle={{ fontSize: 12, color: "hsl(var(--muted-foreground))" }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
               )}
-            </Card>
-          </>
-        )}
+            </div>
+          </Card>
+        </div>
+
+        {/* Recent activity */}
+        <Card className="p-6 rounded-2xl border-border bg-card">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="font-display text-lg font-semibold">Последние сообщения</h3>
+              <p className="text-xs text-muted-foreground">10 свежих записей</p>
+            </div>
+            <span className="px-2.5 py-1 rounded-full bg-primary/15 text-primary text-[10px] font-mono">live</span>
+          </div>
+
+          {loading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-14 w-full rounded-xl" />
+              ))}
+            </div>
+          ) : isEmpty ? (
+            <div className="py-12 text-center">
+              <div className="mx-auto h-12 w-12 rounded-2xl bg-secondary grid place-items-center text-muted-foreground mb-3">
+                <Inbox className="h-6 w-6" />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Данные появятся после первых действий
+              </p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-border">
+              {recent.map(m => (
+                <li key={m.id} className="py-3 flex items-center gap-4">
+                  <div className={`h-9 w-9 rounded-xl bg-secondary grid place-items-center shrink-0 ${m.type === "voice" ? "text-accent" : "text-tg"}`}>
+                    {m.type === "voice" ? <Mic className="h-4 w-4" /> : <Type className="h-4 w-4" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm truncate">
+                      {m.content || <span className="text-muted-foreground italic">без текста</span>}
+                    </p>
+                    <p className="text-xs text-muted-foreground font-mono">
+                      @{m.telegram_id} · {timeAgo(m.created_at)}
+                    </p>
+                  </div>
+                  {m.action && (
+                    <span className="px-2.5 py-1 rounded-full bg-secondary text-[10px] font-mono text-muted-foreground shrink-0 inline-flex items-center gap-1">
+                      <Activity className="h-3 w-3" />
+                      {m.action}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
       </div>
     </div>
   );
