@@ -176,58 +176,46 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {isEmpty ? (
-          <Card className="p-12 rounded-2xl border-border bg-card text-center">
-            <div className="mx-auto h-14 w-14 rounded-2xl bg-secondary grid place-items-center text-muted-foreground mb-4">
-              <Inbox className="h-7 w-7" />
+        {/* Charts grid */}
+        <div className="grid lg:grid-cols-3 gap-5 mb-5">
+          {/* Line: Signups per day */}
+          <Card className="lg:col-span-2 p-6 rounded-2xl border-border bg-card">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="font-display text-lg font-semibold">Регистрации по дням</h3>
+                <p className="text-xs text-muted-foreground">Новые пользователи за неделю</p>
+              </div>
+              <span className="px-2.5 py-1 rounded-full bg-tg/15 text-tg text-[10px] font-mono">line</span>
             </div>
-            <h3 className="font-display text-xl font-semibold mb-1">No messages yet</h3>
-            <p className="text-sm text-muted-foreground">
-              Когда бот начнёт получать сообщения, метрики и графики появятся здесь.
-            </p>
+            <div className="h-72">
+              {loading ? (
+                <Skeleton className="h-full w-full rounded-xl" />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={signups} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="hsl(var(--primary))" />
+                        <stop offset="100%" stopColor="hsl(var(--accent))" />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: "hsl(var(--primary))", strokeWidth: 1, strokeDasharray: "3 3" }} />
+                    <Line
+                      type="monotone"
+                      dataKey="count"
+                      stroke="url(#lineGrad)"
+                      strokeWidth={3}
+                      dot={{ fill: "hsl(var(--primary))", r: 4, strokeWidth: 0 }}
+                      activeDot={{ r: 6, fill: "hsl(var(--accent))" }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </Card>
-        ) : (
-          <>
-            {/* Charts grid */}
-            <div className="grid lg:grid-cols-3 gap-5 mb-5">
-              {/* Line: Messages per day */}
-              <Card className="lg:col-span-2 p-6 rounded-2xl border-border bg-card">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="font-display text-lg font-semibold">Сообщения по дням</h3>
-                    <p className="text-xs text-muted-foreground">Активность чата за неделю</p>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full bg-tg/15 text-tg text-[10px] font-mono">line</span>
-                </div>
-                <div className="h-72">
-                  {loading ? (
-                    <Skeleton className="h-full w-full rounded-xl" />
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={perDay} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-                        <defs>
-                          <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="hsl(var(--primary))" />
-                            <stop offset="100%" stopColor="hsl(var(--accent))" />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                        <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                        <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: "hsl(var(--primary))", strokeWidth: 1, strokeDasharray: "3 3" }} />
-                        <Line
-                          type="monotone"
-                          dataKey="count"
-                          stroke="url(#lineGrad)"
-                          strokeWidth={3}
-                          dot={{ fill: "hsl(var(--primary))", r: 4, strokeWidth: 0 }}
-                          activeDot={{ r: 6, fill: "hsl(var(--accent))" }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
-              </Card>
 
               {/* Pie: Action types */}
               <Card className="p-6 rounded-2xl border-border bg-card">
