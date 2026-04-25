@@ -106,21 +106,6 @@ const Index = () => {
                   Попробовать бесплатно <ArrowRight className="h-4 w-4" />
                 </a>
               </Button>
-              <Button asChild size="xl" variant="outline">
-                <Link to="/app">Посмотреть демо</Link>
-              </Button>
-            </div>
-            <div className="mt-10 flex items-center gap-6 text-sm text-muted-foreground">
-              <div className="flex -space-x-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className="h-8 w-8 rounded-full bg-brand border-2 border-background"
-                    style={{ opacity: 0.4 + i * 0.15 }}
-                  />
-                ))}
-              </div>
-              <span>+1 240 команд используют ежедневно</span>
             </div>
           </div>
 
