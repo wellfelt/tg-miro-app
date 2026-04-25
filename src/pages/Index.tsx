@@ -267,9 +267,8 @@ const Index = () => {
         <div className="container flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
           <p>© 2026 Miro AI Bot · Сделано с любовью к доскам</p>
           <div className="flex gap-6">
-            <Link to="/dashboard" className="hover:text-foreground">Метрики</Link>
-            <Link to="/funnel" className="hover:text-foreground">Воронка</Link>
-            <Link to="/app" className="hover:text-foreground">Чат</Link>
+            <Link to="/login" className="hover:text-foreground">Войти</Link>
+            <Link to="/dashboard" className="hover:text-foreground">Дашборд</Link>
           </div>
         </div>
       </footer>
