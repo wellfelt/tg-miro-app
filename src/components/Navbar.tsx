@@ -58,12 +58,25 @@ export const Navbar = ({ variant = "light" }: { variant?: "light" | "dark" }) =>
         </div>
 
         <div className="hidden md:flex items-center gap-2">
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/login">Войти</Link>
-          </Button>
-          <Button asChild variant="brand" size="sm">
-            <Link to="/login">Начать</Link>
-          </Button>
+          {user ? (
+            <>
+              <span className="text-xs text-muted-foreground font-mono max-w-[180px] truncate">
+                {user.email}
+              </span>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
+                <LogOut className="h-4 w-4" /> Выйти
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/login">Войти</Link>
+              </Button>
+              <Button asChild variant="brand" size="sm">
+                <Link to="/login">Начать</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         <button
