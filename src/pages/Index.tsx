@@ -2,30 +2,77 @@ import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { MessageSquare, Mic, Layers, ArrowRight, Sparkles, Send, Square, Sticker } from "lucide-react";
+import {
+  MessageSquare, Mic, Layers, ArrowRight, Sparkles, Send,
+  StickyNote, Workflow, Network, Eye, Frame,
+} from "lucide-react";
 import heroImg from "@/assets/hero.jpg";
+
+const TELEGRAM_BOT_URL = "https://t.me/your_bot";
 
 const features = [
   {
-    icon: MessageSquare,
-    title: "Команды текстом",
-    desc: "Пиши в Telegram-бот: «добавь стикер „идея запуска“ в правый верх» — и наблюдай, как меняется доска.",
-    color: "from-tg/20 to-tg/5",
+    icon: StickyNote,
+    title: "Стикеры",
+    desc: "«Добавь жёлтый стикер „идея запуска“ в правый верх» — и наблюдай, как доска оживает.",
     iconBg: "bg-tg/15 text-tg",
+    grad: "from-tg/15 to-tg/0",
+  },
+  {
+    icon: Workflow,
+    title: "Блок-схемы",
+    desc: "Опиши процесс словами — бот соберёт прямоугольники, ромбы и стрелки в правильном порядке.",
+    iconBg: "bg-primary/15 text-primary",
+    grad: "from-primary/15 to-primary/0",
+  },
+  {
+    icon: Network,
+    title: "Майндмапы",
+    desc: "«Раскрой тему „онбординг“ на 3 уровня» — получи готовую структуру с ветками и подузлами.",
+    iconBg: "bg-accent/15 text-accent",
+    grad: "from-accent/15 to-accent/0",
   },
   {
     icon: Mic,
-    title: "Голосовые в действия",
-    desc: "Запиши голосовое — AI распознаёт замысел и расставляет блоки, стрелки и группы за тебя.",
-    color: "from-accent/20 to-accent/5",
-    iconBg: "bg-accent/15 text-accent",
+    title: "Голосовой ввод",
+    desc: "Запиши голосовое — AI распознаёт замысел и расставляет блоки за тебя. Без рук.",
+    iconBg: "bg-success/15 text-success",
+    grad: "from-success/15 to-success/0",
   },
   {
-    icon: Layers,
-    title: "Шаблоны на лету",
-    desc: "«Сделай SWOT по нашему проекту» — бот соберёт каркас, разложит идеи и подсветит главное.",
-    color: "from-primary/20 to-primary/5",
+    icon: Eye,
+    title: "Анализ доски",
+    desc: "«Что у меня на доске?» — бот суммирует содержимое, находит дубли и подсветит главное.",
     iconBg: "bg-primary/15 text-primary",
+    grad: "from-primary/15 to-primary/0",
+  },
+  {
+    icon: Frame,
+    title: "Фреймы",
+    desc: "Группируй идеи в фреймы и секции одной командой. Идеально для воркшопов и ретро.",
+    iconBg: "bg-tg/15 text-tg",
+    grad: "from-tg/15 to-tg/0",
+  },
+];
+
+const steps = [
+  {
+    n: "01",
+    title: "Подключи бота",
+    desc: "Открой @your_bot в Telegram и пришли ссылку на свою Miro-доску. 30 секунд на старт.",
+    icon: Send,
+  },
+  {
+    n: "02",
+    title: "Скажи или напиши",
+    desc: "Отправляй текст или голос: «добавь стикер», «нарисуй процесс», «собери майндмап».",
+    icon: MessageSquare,
+  },
+  {
+    n: "03",
+    title: "Смотри, как меняется доска",
+    desc: "Изменения появляются в реальном времени. Бот отвечает кратко, без болтовни.",
+    icon: Layers,
   },
 ];
 
@@ -41,23 +88,23 @@ const Index = () => {
           <div className="animate-slide-up">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-card border border-border text-xs font-medium text-muted-foreground mb-6 shadow-soft">
               <Sparkles className="h-3.5 w-3.5 text-accent" />
-              Бета · работает с любой Miro-доской
+              Miro AI Bot · бета
             </div>
-            <h1 className="font-display text-5xl md:text-7xl font-bold leading-[1.05] mb-6">
-              Управляй <span className="text-gradient">Miro</span><br />
-              из <span className="inline-flex items-center gap-2">
+            <h1 className="font-display text-4xl md:text-6xl font-bold leading-[1.05] mb-6">
+              Управляй <span className="text-gradient">Miro-доской</span> голосом и текстом через{" "}
+              <span className="inline-flex items-center gap-2">
                 <span className="text-tg">Telegram</span>
-                <Send className="h-10 w-10 md:h-14 md:w-14 text-tg -rotate-12 animate-float" />
+                <Send className="h-9 w-9 md:h-12 md:w-12 text-tg -rotate-12 animate-float" />
               </span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-lg mb-8 leading-relaxed">
-              Голосом или текстом меняй доску, не открывая браузер. Идеи летят быстрее мысли — прямо из чата.
+              Создавай стикеры, блок-схемы и майндмапы прямо из чата. Голосом или текстом — без браузера и мышки.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild size="xl" variant="hero">
-                <Link to="/login">
-                  Начать <ArrowRight className="h-4 w-4" />
-                </Link>
+                <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer">
+                  Попробовать бесплатно <ArrowRight className="h-4 w-4" />
+                </a>
               </Button>
               <Button asChild size="xl" variant="outline">
                 <Link to="/app">Посмотреть демо</Link>
@@ -65,8 +112,12 @@ const Index = () => {
             </div>
             <div className="mt-10 flex items-center gap-6 text-sm text-muted-foreground">
               <div className="flex -space-x-2">
-                {[1,2,3,4].map(i => (
-                  <div key={i} className="h-8 w-8 rounded-full bg-brand border-2 border-background" style={{opacity: 0.4 + i*0.15}} />
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="h-8 w-8 rounded-full bg-brand border-2 border-background"
+                    style={{ opacity: 0.4 + i * 0.15 }}
+                  />
                 ))}
               </div>
               <span>+1 240 команд используют ежедневно</span>
@@ -77,42 +128,80 @@ const Index = () => {
             <div className="absolute -inset-4 bg-brand opacity-20 blur-3xl rounded-full" />
             <img
               src={heroImg}
-              alt="Telegram превращается в Miro доску — иллюстрация интеграции"
+              alt="Miro AI Bot — управление доской из Telegram"
               width={1536}
               height={1024}
               className="relative rounded-2xl shadow-elegant w-full"
+              loading="eager"
             />
           </div>
         </div>
       </section>
 
-      {/* Features */}
+      {/* Features — 6 cards */}
       <section className="container py-20 md:py-28">
         <div className="max-w-2xl mb-14">
-          <p className="font-mono text-xs uppercase tracking-widest text-accent mb-3">Что умеет</p>
+          <p className="font-mono text-xs uppercase tracking-widest text-accent mb-3">Возможности</p>
           <h2 className="font-display text-4xl md:text-5xl font-bold leading-tight">
-            Три способа <br />двигать доску из чата
+            Шесть инструментов, <br />одно сообщение
           </h2>
         </div>
-        <div className="grid md:grid-cols-3 gap-5">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
           {features.map((f, i) => (
             <Card
               key={f.title}
-              className={`relative p-7 rounded-2xl border-border bg-gradient-to-br ${f.color} hover:-translate-y-1 transition-all duration-500 hover:shadow-elegant group overflow-hidden`}
+              className={`relative p-7 rounded-2xl border-border bg-gradient-to-br ${f.grad} hover:-translate-y-1 transition-all duration-500 hover:shadow-elegant group overflow-hidden`}
             >
               <div className={`h-12 w-12 rounded-xl ${f.iconBg} grid place-items-center mb-5`}>
                 <f.icon className="h-6 w-6" />
               </div>
               <h3 className="font-display text-xl font-semibold mb-2">{f.title}</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">{f.desc}</p>
-              <span className="absolute top-5 right-5 font-mono text-xs text-muted-foreground/50">0{i+1}</span>
+              <span className="absolute top-5 right-5 font-mono text-xs text-muted-foreground/50">
+                0{i + 1}
+              </span>
             </Card>
           ))}
         </div>
       </section>
 
+      {/* How it works — 3 steps */}
+      <section className="relative overflow-hidden border-y border-border bg-secondary/30">
+        <div className="absolute inset-0 bg-mesh opacity-40 pointer-events-none" />
+        <div className="container relative py-20 md:py-28">
+          <div className="max-w-2xl mb-14">
+            <p className="font-mono text-xs uppercase tracking-widest text-primary mb-3">Как это работает</p>
+            <h2 className="font-display text-4xl md:text-5xl font-bold leading-tight">
+              Три шага <br />до первой доски
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 relative">
+            {steps.map((s, i) => (
+              <div key={s.n} className="relative">
+                <Card className="p-7 rounded-2xl border-border bg-card h-full hover:shadow-elegant transition-shadow">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="h-12 w-12 rounded-xl bg-brand grid place-items-center text-primary-foreground">
+                      <s.icon className="h-6 w-6" />
+                    </div>
+                    <span className="font-display text-4xl font-bold text-muted-foreground/30">
+                      {s.n}
+                    </span>
+                  </div>
+                  <h3 className="font-display text-xl font-semibold mb-2">{s.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{s.desc}</p>
+                </Card>
+                {i < steps.length - 1 && (
+                  <ArrowRight className="hidden md:block absolute top-1/2 -right-4 h-6 w-6 text-muted-foreground/40 z-10" />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Demo block */}
-      <section className="container pb-20 md:pb-28">
+      <section className="container py-20 md:py-28">
         <Card className="overflow-hidden rounded-2xl border-border bg-card shadow-soft">
           <div className="grid lg:grid-cols-2">
             <div className="p-8 md:p-12 flex flex-col justify-center">
@@ -121,7 +210,7 @@ const Index = () => {
                 Сказал в чат — увидел на доске
               </h2>
               <p className="text-muted-foreground mb-6 leading-relaxed">
-                Команды попадают в очередь, бот отвечает кратко, а изменения отображаются в реальном времени. Никаких сложных интерфейсов.
+                Команды попадают в очередь, бот отвечает кратко, изменения видны в реальном времени.
               </p>
               <div className="space-y-3">
                 {[
@@ -129,11 +218,13 @@ const Index = () => {
                   { who: "Бот", text: "Готово. Расположил по углам, подсветил «риски» жёлтым.", side: "left" },
                 ].map((m, i) => (
                   <div key={i} className={`flex ${m.side === "right" ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm ${
-                      m.side === "right"
-                        ? "bg-brand text-primary-foreground rounded-br-sm"
-                        : "bg-secondary text-foreground rounded-bl-sm"
-                    }`}>
+                    <div
+                      className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm ${
+                        m.side === "right"
+                          ? "bg-brand text-primary-foreground rounded-br-sm"
+                          : "bg-secondary text-foreground rounded-bl-sm"
+                      }`}
+                    >
                       {m.text}
                     </div>
                   </div>
@@ -179,9 +270,9 @@ const Index = () => {
               30 секунд на подключение. Никаких настроек — только Telegram и доска.
             </p>
             <Button asChild size="xl" variant="accent" className="animate-pulse-glow">
-              <Link to="/login">
-                Подключить бота <ArrowRight className="h-4 w-4" />
-              </Link>
+              <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer">
+                Попробовать бесплатно <ArrowRight className="h-4 w-4" />
+              </a>
             </Button>
           </div>
         </div>
@@ -189,7 +280,7 @@ const Index = () => {
 
       <footer className="border-t border-border py-8">
         <div className="container flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-          <p>© 2026 tg×miro · Сделано с любовью к доскам</p>
+          <p>© 2026 Miro AI Bot · Сделано с любовью к доскам</p>
           <div className="flex gap-6">
             <Link to="/dashboard" className="hover:text-foreground">Метрики</Link>
             <Link to="/funnel" className="hover:text-foreground">Воронка</Link>
