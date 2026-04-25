@@ -8,7 +8,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   PieChart, Pie, Cell, Legend,
 } from "recharts";
-import { MessageSquare, Mic, Users, Inbox, Type, Activity, UserPlus } from "lucide-react";
+import { MessageSquare, Mic, Inbox, Type, Activity, UserPlus } from "lucide-react";
 
 type MessageRow = {
   id: string;
