@@ -36,27 +36,16 @@ const tooltipStyle = {
 
 const WEEKDAYS = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
 
-function buildLast7Days(messages: MessageRow[]) {
-  const buckets: { day: string; count: number; date: string }[] = [];
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+type SignupRow = { day: string; count: number };
 
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    buckets.push({
+function formatSignups(rows: { day: string; count: number | string }[]): SignupRow[] {
+  return rows.map(r => {
+    const d = new Date(r.day);
+    return {
       day: WEEKDAYS[d.getDay()],
-      count: 0,
-      date: d.toISOString().slice(0, 10),
-    });
-  }
-
-  for (const m of messages) {
-    const key = new Date(m.created_at).toISOString().slice(0, 10);
-    const bucket = buckets.find(b => b.date === key);
-    if (bucket) bucket.count++;
-  }
-  return buckets;
+      count: Number(r.count) || 0,
+    };
+  });
 }
 
 function categorizeAction(action: string | null): "sticky" | "shape" | "read" | "other" {
