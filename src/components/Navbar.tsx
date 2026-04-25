@@ -15,7 +15,16 @@ const links = [
 
 export const Navbar = ({ variant = "light" }: { variant?: "light" | "dark" }) => {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const [open, setOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await signOut();
+    toast.success("Вы вышли");
+    navigate("/", { replace: true });
+    setOpen(false);
+  };
 
   return (
     <header
