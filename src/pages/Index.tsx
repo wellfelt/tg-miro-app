@@ -59,7 +59,7 @@ const steps = [
   {
     n: "01",
     title: "Подключи бота",
-    desc: "Открой @your_bot в Telegram и пришли ссылку на свою Miro-доску. 30 секунд на старт.",
+    desc: "Открой @miro_wfl_bot в Telegram и пришли ссылку на свою Miro-доску. 30 секунд на старт.",
     icon: Send,
   },
   {
