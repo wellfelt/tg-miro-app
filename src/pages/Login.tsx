@@ -18,16 +18,15 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const navigate = useNavigate();
-  const { user, isAdmin, profile, loading } = useAuth();
+  const { user, isAdmin, profile, loading: authLoading } = useAuth();
 
   // If already authenticated, route by role
   useEffect(() => {
-    if (loading) return;
+    if (authLoading) return;
     if (!user) return;
-    // Wait until profile resolved so we can route correctly
     if (profile === null) return;
     navigate(isAdmin ? "/admin" : "/dashboard", { replace: true });
-  }, [user, profile, isAdmin, loading, navigate]);
+  }, [user, profile, isAdmin, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
