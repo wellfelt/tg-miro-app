@@ -67,22 +67,43 @@ export type Database = {
       }
       profiles: {
         Row: {
+          board_id: string | null
+          board_url: string | null
           created_at: string
+          email: string | null
           id: string
+          miro_token: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          telegram_id: number | null
           telegram_username: string | null
           updated_at: string
+          username: string | null
         }
         Insert: {
+          board_id?: string | null
+          board_url?: string | null
           created_at?: string
+          email?: string | null
           id: string
+          miro_token?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          telegram_id?: number | null
           telegram_username?: string | null
           updated_at?: string
+          username?: string | null
         }
         Update: {
+          board_id?: string | null
+          board_url?: string | null
           created_at?: string
+          email?: string | null
           id?: string
+          miro_token?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          telegram_id?: number | null
           telegram_username?: string | null
           updated_at?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -91,6 +112,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_admin_funnel: {
+        Args: never
+        Returns: {
+          count: number
+          ord: number
+          stage: string
+        }[]
+      }
+      get_messages_per_day: {
+        Args: never
+        Returns: {
+          count: number
+          day: string
+        }[]
+      }
       get_signups_per_day: {
         Args: never
         Returns: {
@@ -99,9 +135,10 @@ export type Database = {
         }[]
       }
       get_total_users: { Args: never; Returns: number }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -228,6 +265,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
