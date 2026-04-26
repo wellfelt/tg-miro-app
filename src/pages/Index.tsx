@@ -102,9 +102,9 @@ const Index = () => {
             </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild size="xl" variant="hero">
-                <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer">
-                  Попробовать бесплатно <ArrowRight className="h-4 w-4" />
-                </a>
+                <Link to="/login">
+                  Попробовать бота <ArrowRight className="h-4 w-4" />
+                </Link>
               </Button>
             </div>
           </div>
@@ -255,9 +255,9 @@ const Index = () => {
               30 секунд на подключение. Никаких настроек — только Telegram и доска.
             </p>
             <Button asChild size="xl" variant="accent" className="animate-pulse-glow">
-              <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer">
-                Попробовать бесплатно <ArrowRight className="h-4 w-4" />
-              </a>
+              <Link to="/login">
+                Попробовать бота <ArrowRight className="h-4 w-4" />
+              </Link>
             </Button>
           </div>
         </div>
