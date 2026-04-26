@@ -18,12 +18,15 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin, profile, loading: authLoading } = useAuth();
 
-  // If already authenticated, send to dashboard
+  // If already authenticated, route by role
   useEffect(() => {
-    if (user) navigate("/dashboard", { replace: true });
-  }, [user, navigate]);
+    if (authLoading) return;
+    if (!user) return;
+    if (profile === null) return;
+    navigate(isAdmin ? "/admin" : "/dashboard", { replace: true });
+  }, [user, profile, isAdmin, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +58,7 @@ const Login = () => {
           return;
         }
         toast.success("Аккаунт создан ✨");
-        navigate("/dashboard", { replace: true });
+        // Effect above will redirect once profile loads
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
@@ -65,7 +68,7 @@ const Login = () => {
           return;
         }
         toast.success("С возвращением 👋");
-        navigate("/dashboard", { replace: true });
+        // Effect above will redirect once profile loads
       }
     } finally {
       setLoading(false);

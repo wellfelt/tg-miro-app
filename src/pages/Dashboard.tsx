@@ -1,316 +1,178 @@
 import { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  ResponsiveContainer,
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  PieChart, Pie, Cell, Legend,
-} from "recharts";
-import { MessageSquare, Mic, Inbox, Type, Activity, UserPlus } from "lucide-react";
+import { toast } from "sonner";
+import { Send, ExternalLink, Layers, Loader2, CheckCircle2, AlertCircle, BookOpen } from "lucide-react";
 
-type MessageRow = {
-  id: string;
-  telegram_id: string;
-  type: "text" | "voice";
-  content: string | null;
-  action: string | null;
-  created_at: string;
-};
+const TELEGRAM_BOT_URL = "https://t.me/MiroAIBot";
 
-const PIE_COLORS = [
-  "hsl(var(--primary))",
-  "hsl(var(--accent))",
-  "hsl(var(--tg))",
-  "hsl(var(--success))",
-];
-
-const tooltipStyle = {
-  background: "hsl(var(--card))",
-  border: "1px solid hsl(var(--border))",
-  borderRadius: 12,
-  fontSize: 12,
-  color: "hsl(var(--foreground))",
-};
-
-const WEEKDAYS = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
-
-type SignupRow = { day: string; count: number };
-
-function formatSignups(rows: { day: string; count: number | string }[]): SignupRow[] {
-  return rows.map(r => {
-    const d = new Date(r.day);
-    return {
-      day: WEEKDAYS[d.getDay()],
-      count: Number(r.count) || 0,
-    };
-  });
-}
-
-function categorizeAction(action: string | null): "sticky" | "shape" | "read" | "other" {
-  if (!action) return "other";
-  const a = action.toLowerCase();
-  if (a.includes("stick")) return "sticky";
-  if (a.includes("shape") || a.includes("arrow") || a.includes("frame") || a.includes("rect") || a.includes("circle")) return "shape";
-  if (a.includes("read") || a.includes("get") || a.includes("list") || a.includes("view")) return "read";
-  return "other";
-}
-
-function buildActionDistribution(messages: MessageRow[]) {
-  const counts: Record<string, number> = { sticky: 0, shape: 0, read: 0, other: 0 };
-  for (const m of messages) counts[categorizeAction(m.action)]++;
-  const labels: Record<string, string> = {
-    sticky: "Стикеры",
-    shape: "Фигуры",
-    read: "Чтение",
-    other: "Прочее",
-  };
-  return Object.entries(counts)
-    .filter(([, v]) => v > 0)
-    .map(([k, v]) => ({ name: labels[k], value: v }));
-}
-
-function timeAgo(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "только что";
-  if (m < 60) return `${m} мин назад`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} ч назад`;
-  const d = Math.floor(h / 24);
-  return `${d} д назад`;
+function extractBoardId(input: string): string | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  // Try to pull the id segment from a Miro share URL: https://miro.com/app/board/<id>/
+  const m = trimmed.match(/miro\.com\/app\/board\/([^/?#]+)/i);
+  if (m) return m[1];
+  // Otherwise treat as raw id
+  return trimmed;
 }
 
 const Dashboard = () => {
-  const [loading, setLoading] = useState(true);
-  const [messages, setMessages] = useState<MessageRow[]>([]);
-  const [recent, setRecent] = useState<MessageRow[]>([]);
-  const [signups, setSignups] = useState<SignupRow[]>([]);
-  const [totalUsers, setTotalUsers] = useState<number>(0);
+  const { user, profile, refreshProfile } = useAuth();
+  const [boardInput, setBoardInput] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    setBoardInput(profile?.board_url ?? "");
+  }, [profile?.board_url]);
 
-      const sb = supabase as unknown as {
-        rpc: (fn: string) => Promise<{ data: unknown; error: unknown }>;
-      };
+  const handleSaveBoard = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    const boardId = extractBoardId(boardInput);
+    if (!boardId) {
+      toast.error("Введите ссылку на доску или ID");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ board_id: boardId, board_url: boardInput.trim() })
+      .eq("id", user.id);
+    setSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    await refreshProfile();
+    toast.success("Доска сохранена");
+  };
 
-      const [weekRes, recentRes, signupsRes, totalUsersRes] = await Promise.all([
-        supabase
-          .from("messages")
-          .select("*")
-          .gte("created_at", sevenDaysAgo.toISOString()),
-        supabase
-          .from("messages")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(10),
-        sb.rpc("get_signups_per_day"),
-        sb.rpc("get_total_users"),
-      ]);
-
-      if (cancelled) return;
-      if (weekRes.data) setMessages(weekRes.data as MessageRow[]);
-      if (recentRes.data) setRecent(recentRes.data as MessageRow[]);
-      if (Array.isArray(signupsRes.data)) {
-        setSignups(formatSignups(signupsRes.data as { day: string; count: number }[]));
-      }
-      if (typeof totalUsersRes.data === "number") {
-        setTotalUsers(totalUsersRes.data);
-      }
-      setLoading(false);
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
-  const totalMessages = messages.length;
-  const voiceCount = messages.filter(m => m.type === "voice").length;
-  const textCount = totalMessages - voiceCount;
-  const actionDist = buildActionDistribution(messages);
-  const isEmpty = !loading && totalMessages === 0;
-
-  const stats = [
-    { icon: UserPlus,      label: "Всего пользователей",       value: totalUsers.toLocaleString("ru"),    color: "text-primary" },
-    { icon: MessageSquare, label: "Всего сообщений",           value: totalMessages.toLocaleString("ru"), color: "text-tg" },
-    { icon: Mic,           label: "Голосовых",                 value: voiceCount.toLocaleString("ru"),    color: "text-accent" },
-    { icon: Type,          label: "Текстовых",                 value: textCount.toLocaleString("ru"),     color: "text-success" },
-  ];
+  const tgConnected = profile?.telegram_id != null;
 
   return (
     <div className="app-dark min-h-screen bg-background text-foreground">
       <Navbar variant="dark" />
 
-      <div className="container py-10">
-        <div className="mb-8 flex items-end justify-between flex-wrap gap-4">
-          <div>
-            <p className="font-mono text-xs uppercase tracking-widest text-accent mb-2">Аналитика</p>
-            <h1 className="font-display text-4xl md:text-5xl font-bold">Метрики бота</h1>
-            <p className="text-muted-foreground mt-2">Последние 7 дней · реальные данные</p>
-          </div>
-          <div className="px-4 py-2 rounded-full bg-secondary text-xs font-mono text-muted-foreground">
-            {loading ? "загрузка…" : "обновлено сейчас"}
-          </div>
+      <div className="container py-10 max-w-3xl">
+        <div className="mb-8">
+          <p className="font-mono text-xs uppercase tracking-widest text-accent mb-2">Кабинет</p>
+          <h1 className="font-display text-4xl md:text-5xl font-bold">Личный кабинет</h1>
+          <p className="text-muted-foreground mt-2">{profile?.email ?? user?.email}</p>
         </div>
 
-        {/* Stat cards */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {stats.map(s => (
-            <Card key={s.label} className="p-5 rounded-2xl border-border bg-card hover:border-primary/30 transition-colors">
-              <div className="flex items-start justify-between mb-4">
-                <div className={`h-10 w-10 rounded-xl bg-secondary grid place-items-center ${s.color}`}>
-                  <s.icon className="h-5 w-5" />
-                </div>
-              </div>
-              {loading ? (
-                <Skeleton className="h-8 w-20" />
-              ) : (
-                <p className="font-display text-3xl font-bold">{s.value}</p>
-              )}
-              <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
-            </Card>
-          ))}
-        </div>
-
-        {/* Charts grid */}
-        <div className="grid lg:grid-cols-3 gap-5 mb-5">
-          {/* Line: Signups per day */}
-          <Card className="lg:col-span-2 p-6 rounded-2xl border-border bg-card">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="font-display text-lg font-semibold">Регистрации по дням</h3>
-                <p className="text-xs text-muted-foreground">Новые пользователи за неделю</p>
-              </div>
-              <span className="px-2.5 py-1 rounded-full bg-tg/15 text-tg text-[10px] font-mono">line</span>
-            </div>
-            <div className="h-72">
-              {loading ? (
-                <Skeleton className="h-full w-full rounded-xl" />
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={signups} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-                    <defs>
-                      <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor="hsl(var(--primary))" />
-                        <stop offset="100%" stopColor="hsl(var(--accent))" />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                    <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: "hsl(var(--primary))", strokeWidth: 1, strokeDasharray: "3 3" }} />
-                    <Line
-                      type="monotone"
-                      dataKey="count"
-                      stroke="url(#lineGrad)"
-                      strokeWidth={3}
-                      dot={{ fill: "hsl(var(--primary))", r: 4, strokeWidth: 0 }}
-                      activeDot={{ r: 6, fill: "hsl(var(--accent))" }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </Card>
-
-          {/* Pie: Action types */}
+        <div className="space-y-5">
+          {/* Telegram Bot */}
           <Card className="p-6 rounded-2xl border-border bg-card">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="font-display text-lg font-semibold">Типы действий</h3>
-                <p className="text-xs text-muted-foreground">Распределение по категориям</p>
-              </div>
-              <span className="px-2.5 py-1 rounded-full bg-accent/15 text-accent text-[10px] font-mono">pie</span>
-            </div>
-            <div className="h-72">
-              {loading ? (
-                <Skeleton className="h-full w-full rounded-xl" />
-              ) : actionDist.length === 0 ? (
-                <div className="h-full grid place-items-center text-sm text-muted-foreground text-center px-4">
-                  Данные появятся после первых действий
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div className="flex items-start gap-4">
+                <div className="h-11 w-11 rounded-xl bg-tg/15 text-tg grid place-items-center shrink-0">
+                  <Send className="h-5 w-5 -rotate-12" />
                 </div>
+                <div>
+                  <h2 className="font-display text-xl font-semibold mb-1">Telegram Bot</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Напишите <span className="font-mono">/start</span> боту{" "}
+                    <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer" className="text-tg underline">
+                      @MiroAIBot
+                    </a>{" "}
+                    в Telegram для активации
+                  </p>
+                </div>
+              </div>
+              {tgConnected ? (
+                <Badge className="bg-success/15 text-success border-success/20 hover:bg-success/15 shrink-0">
+                  <CheckCircle2 className="h-3 w-3" /> Подключён
+                </Badge>
               ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={actionDist}
-                      cx="50%" cy="50%"
-                      innerRadius={55}
-                      outerRadius={95}
-                      paddingAngle={4}
-                      dataKey="value"
-                      stroke="hsl(var(--card))"
-                      strokeWidth={3}
-                    >
-                      {actionDist.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip contentStyle={tooltipStyle} />
-                    <Legend
-                      iconType="circle"
-                      wrapperStyle={{ fontSize: 12, color: "hsl(var(--muted-foreground))" }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+                <Badge variant="secondary" className="shrink-0">
+                  <AlertCircle className="h-3 w-3" /> Не подключён
+                </Badge>
               )}
             </div>
-          </Card>
-        </div>
 
-        {/* Recent activity */}
-        <Card className="p-6 rounded-2xl border-border bg-card">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="font-display text-lg font-semibold">Последние сообщения</h3>
-              <p className="text-xs text-muted-foreground">10 свежих записей</p>
-            </div>
-            <span className="px-2.5 py-1 rounded-full bg-primary/15 text-primary text-[10px] font-mono">live</span>
-          </div>
-
-          {loading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-14 w-full rounded-xl" />
-              ))}
-            </div>
-          ) : isEmpty ? (
-            <div className="py-12 text-center">
-              <div className="mx-auto h-12 w-12 rounded-2xl bg-secondary grid place-items-center text-muted-foreground mb-3">
-                <Inbox className="h-6 w-6" />
+            {tgConnected && (
+              <div className="rounded-xl bg-secondary/40 border border-border/50 p-3 text-sm font-mono">
+                {profile?.username ? `@${profile.username}` : `id ${profile?.telegram_id}`}
               </div>
-              <p className="text-sm text-muted-foreground">
-                Данные появятся после первых действий
-              </p>
+            )}
+
+            {!tgConnected && (
+              <Button asChild variant="brand" size="sm" className="mt-2">
+                <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer">
+                  Открыть бота <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </Button>
+            )}
+          </Card>
+
+          {/* Miro Board */}
+          <Card className="p-6 rounded-2xl border-border bg-card">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="h-11 w-11 rounded-xl bg-primary/15 text-primary grid place-items-center shrink-0">
+                <Layers className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="font-display text-xl font-semibold mb-1">Miro Board</h2>
+                <p className="text-sm text-muted-foreground">
+                  Найдите ссылку: откройте доску Miro → Share → Copy link
+                </p>
+              </div>
             </div>
-          ) : (
-            <ul className="divide-y divide-border">
-              {recent.map(m => (
-                <li key={m.id} className="py-3 flex items-center gap-4">
-                  <div className={`h-9 w-9 rounded-xl bg-secondary grid place-items-center shrink-0 ${m.type === "voice" ? "text-accent" : "text-tg"}`}>
-                    {m.type === "voice" ? <Mic className="h-4 w-4" /> : <Type className="h-4 w-4" />}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm truncate">
-                      {m.content || <span className="text-muted-foreground italic">без текста</span>}
-                    </p>
-                    <p className="text-xs text-muted-foreground font-mono">
-                      @{m.telegram_id} · {timeAgo(m.created_at)}
-                    </p>
-                  </div>
-                  {m.action && (
-                    <span className="px-2.5 py-1 rounded-full bg-secondary text-[10px] font-mono text-muted-foreground shrink-0 inline-flex items-center gap-1">
-                      <Activity className="h-3 w-3" />
-                      {m.action}
-                    </span>
-                  )}
+
+            <form onSubmit={handleSaveBoard} className="space-y-3">
+              <Input
+                value={boardInput}
+                onChange={(e) => setBoardInput(e.target.value)}
+                placeholder="Вставьте ссылку на доску Miro или ID"
+                className="rounded-xl bg-secondary border-0 h-11"
+              />
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                {profile?.board_url ? (
+                  <p className="text-xs text-muted-foreground font-mono truncate max-w-[60%]">
+                    Сохранено: <span className="text-foreground">{profile.board_id}</span>
+                  </p>
+                ) : (
+                  <span className="text-xs text-muted-foreground">Доска ещё не подключена</span>
+                )}
+                <Button type="submit" variant="hero" size="sm" disabled={saving}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Сохранить"}
+                </Button>
+              </div>
+            </form>
+          </Card>
+
+          {/* How to use */}
+          <Card className="p-6 rounded-2xl border-border bg-card">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="h-11 w-11 rounded-xl bg-accent/15 text-accent grid place-items-center shrink-0">
+                <BookOpen className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="font-display text-xl font-semibold mb-1">Как пользоваться</h2>
+                <p className="text-sm text-muted-foreground">Три простых шага до первого результата</p>
+              </div>
+            </div>
+            <ol className="space-y-3">
+              {[
+                "Активируйте бота в Telegram",
+                "Подключите доску Miro выше",
+                "Напишите боту что создать (блок-схему, майндмап, стикеры)",
+              ].map((step, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm">
+                  <span className="h-6 w-6 rounded-full bg-secondary grid place-items-center font-mono text-xs shrink-0">
+                    {i + 1}
+                  </span>
+                  <span className="leading-relaxed pt-0.5">{step}</span>
                 </li>
               ))}
-            </ul>
-          )}
-        </Card>
+            </ol>
+          </Card>
+        </div>
       </div>
     </div>
   );
