@@ -7,17 +7,21 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
-const authedLinks = [
-  { to: "/dashboard", label: "Дашборд" },
-  { to: "/chat", label: "Чат" },
-  { to: "/funnel", label: "Воронка" },
+const userLinks = [
+  { to: "/dashboard", label: "Кабинет" },
+];
+
+const adminLinks = [
+  { to: "/admin", label: "Админ" },
+  { to: "/dashboard", label: "Кабинет" },
 ];
 
 export const Navbar = ({ variant = "light" }: { variant?: "light" | "dark" }) => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
   const [open, setOpen] = useState(false);
+  const links = user ? (isAdmin ? adminLinks : userLinks) : [];
 
   const handleLogout = async () => {
     await signOut();
@@ -41,7 +45,7 @@ export const Navbar = ({ variant = "light" }: { variant?: "light" | "dark" }) =>
         </Link>
 
         <div className="hidden md:flex items-center gap-1">
-          {user && authedLinks.map((l) => (
+          {links.map((l) => (
             <Link
               key={l.to}
               to={l.to}
@@ -91,7 +95,7 @@ export const Navbar = ({ variant = "light" }: { variant?: "light" | "dark" }) =>
       {open && (
         <div className="md:hidden border-t border-border bg-background">
           <div className="container py-4 flex flex-col gap-1">
-            {user && authedLinks.map((l) => (
+            {links.map((l) => (
               <Link
                 key={l.to}
                 to={l.to}
