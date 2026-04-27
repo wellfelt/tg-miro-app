@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Send, ExternalLink, Layers, Loader2, CheckCircle2, AlertCircle, BookOpen } from "lucide-react";
 
-const TELEGRAM_BOT_URL = "https://t.me/MiroAIBot";
+const TELEGRAM_BOT_URL = "https://t.me/miro_wfl_bot";
 
 function extractBoardId(input: string): string | null {
   const trimmed = input.trim();
@@ -78,7 +78,7 @@ const Dashboard = () => {
                   <p className="text-sm text-muted-foreground">
                     Напишите <span className="font-mono">/start</span> боту{" "}
                     <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer" className="text-tg underline">
-                      @MiroAIBot
+                      @miro_wfl_bot
                     </a>{" "}
                     в Telegram для активации
                   </p>
